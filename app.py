@@ -3,11 +3,9 @@ import pandas as pd
 from google import genai
 import plotly.express as px
 import math
-import time
-
 
 # 1. SETUP
-API_KEY = 'AIzaSyCd1npdo4mYKqWACOnu8juxv_87J6TJcQI'
+API_KEY = st.secrets["GOOGLE_API_KEY"]
 client = genai.Client(api_key=API_KEY)
 
 st.set_page_config(page_title="ASCEND: Federal Command", layout="wide")
@@ -22,6 +20,8 @@ if 'stats' not in st.session_state:
     st.session_state.stats = {"Economy": 20, "Living": 20, "Pressure": 1}
 if 'history' not in st.session_state:
     st.session_state.history = []
+if 'pass_go_count' not in st.session_state:
+    st.session_state.pass_go_count = 0
 
 # 3. SIDEBAR
 st.sidebar.title("🎮 City Vitals")
@@ -68,6 +68,18 @@ with col1:
             st.error(f"AI Offline. Error details: {e}")
 
     st.divider()
+
+    # PASS GO BUTTON
+    col_go1, col_go2 = st.columns([1, 2])
+    with col_go1:
+        if st.button("✅ Pass Go"):
+            st.session_state.pass_go_count += 1
+            st.success(f"Passed Go! ({st.session_state.pass_go_count}/6)")
+    with col_go2:
+        st.progress(st.session_state.pass_go_count / 6)
+        st.caption(f"{st.session_state.pass_go_count}/6 laps completed")
+
+    st.divider()
     df = pd.DataFrame(st.session_state.history)
     if not df.empty and "Turn" in df.columns:
         fig = px.line(df, x="Turn", y=["Econ", "Life"], title="City Growth Trajectory", markers=True)
@@ -93,56 +105,58 @@ with col2:
         st.write(f"Keep building. You need to close a gap of {dist:.1f} points to match Ohio's metrics.")
 
     st.divider()
-    st.markdown("**Win Condition:** Reach Metroplex Status (95 Econ / 90 Living).")
 
-    # WIN CONDITION CHECK
-    if current_e >= 95 and current_l >= 90:
-        st.balloons()  # Streamlit's built-in confetti!
-        st.success("🏆 METROPLEX STATUS ACHIEVED!")
-        st.markdown("### Your city ranks among the greatest in America:")
+    game_over = st.session_state.pass_go_count >= 6
 
-        cities = [
-            {"Rank": 1,  "City": "New York, NY",      "Econ": 99, "Living": 97},
-            {"Rank": 2,  "City": "San Francisco, CA",  "Econ": 98, "Living": 94},
-            {"Rank": 3,  "City": "Seattle, WA",        "Econ": 97, "Living": 95},
-            {"Rank": 4,  "City": "Boston, MA",         "Econ": 96, "Living": 93},
-            {"Rank": 5,  "City": "Austin, TX",         "Econ": 95, "Living": 92},
-            {"Rank": 6,  "City": "YOUR CITY 🏙️",      "Econ": current_e, "Living": current_l},
-            {"Rank": 7,  "City": "Denver, CO",         "Econ": 94, "Living": 91},
-            {"Rank": 8,  "City": "Chicago, IL",        "Econ": 93, "Living": 90},
-            {"Rank": 9,  "City": "Nashville, TN",      "Econ": 92, "Living": 89},
-            {"Rank": 10, "City": "Portland, OR",       "Econ": 91, "Living": 88},
-            {"Rank": 11, "City": "Miami, FL",          "Econ": 90, "Living": 87},
-            {"Rank": 12, "City": "Minneapolis, MN",    "Econ": 89, "Living": 86},
-            {"Rank": 13, "City": "Atlanta, GA",        "Econ": 88, "Living": 85},
-            {"Rank": 14, "City": "Dallas, TX",         "Econ": 87, "Living": 84},
-            {"Rank": 15, "City": "Phoenix, AZ",        "Econ": 86, "Living": 83},
-            {"Rank": 16, "City": "San Diego, CA",      "Econ": 85, "Living": 82},
-            {"Rank": 17, "City": "Charlotte, NC",      "Econ": 84, "Living": 81},
-            {"Rank": 18, "City": "Columbus, OH",       "Econ": 83, "Living": 80},
-            {"Rank": 19, "City": "Indianapolis, IN",   "Econ": 82, "Living": 79},
-            {"Rank": 20, "City": "Las Vegas, NV",      "Econ": 81, "Living": 78},
-        ]
+    if game_over:
+        if current_e >= 95 and current_l >= 90:
+            st.balloons()
+            st.success("🏆 METROPLEX STATUS ACHIEVED!")
+            st.markdown("### Your city ranks among the greatest in America:")
 
-        # Sort by Econ + Living combined score so your city lands in the right spot
-        cities_sorted = sorted(cities, key=lambda x: x["Econ"] + x["Living"], reverse=True)
-        for i, city in enumerate(cities_sorted):
-            city["Rank"] = i + 1
+            cities = [
+                {"City": "New York, NY",      "Econ": 99, "Living": 97},
+                {"City": "San Francisco, CA",  "Econ": 98, "Living": 94},
+                {"City": "Seattle, WA",        "Econ": 97, "Living": 95},
+                {"City": "Boston, MA",         "Econ": 96, "Living": 93},
+                {"City": "Austin, TX",         "Econ": 95, "Living": 92},
+                {"City": "Denver, CO",         "Econ": 94, "Living": 91},
+                {"City": "Chicago, IL",        "Econ": 93, "Living": 90},
+                {"City": "Nashville, TN",      "Econ": 92, "Living": 89},
+                {"City": "Portland, OR",       "Econ": 91, "Living": 88},
+                {"City": "Miami, FL",          "Econ": 90, "Living": 87},
+                {"City": "Minneapolis, MN",    "Econ": 89, "Living": 86},
+                {"City": "Atlanta, GA",        "Econ": 88, "Living": 85},
+                {"City": "Dallas, TX",         "Econ": 87, "Living": 84},
+                {"City": "Phoenix, AZ",        "Econ": 86, "Living": 83},
+                {"City": "San Diego, CA",      "Econ": 85, "Living": 82},
+                {"City": "Charlotte, NC",      "Econ": 84, "Living": 81},
+                {"City": "Columbus, OH",       "Econ": 83, "Living": 80},
+                {"City": "Indianapolis, IN",   "Econ": 82, "Living": 79},
+                {"City": "Las Vegas, NV",      "Econ": 81, "Living": 78},
+                {"City": "YOUR CITY 🏙️",      "Econ": current_e, "Living": current_l},
+            ]
 
-        df_cities = pd.DataFrame(cities_sorted)
+            cities_sorted = sorted(cities, key=lambda x: x["Econ"] + x["Living"], reverse=True)
+            for i, city in enumerate(cities_sorted):
+                city["Rank"] = i + 1
 
-        # Highlight your city in the table
-        def highlight_player(row):
-            if "YOUR CITY" in row["City"]:
-                return ["background-color: #ffd700; color: black"] * len(row)
-            return [""] * len(row)
+            df_cities = pd.DataFrame(cities_sorted)[["Rank", "City", "Econ", "Living"]]
 
-        st.dataframe(
-            df_cities.style.apply(highlight_player, axis=1),
-            use_container_width=True,
-            hide_index=True
-        )
+            def highlight_player(row):
+                if "YOUR CITY" in row["City"]:
+                    return ["background-color: #ffd700; color: black"] * len(row)
+                return [""] * len(row)
 
-    st.divider()
-
-API_KEY = st.secrets["GOOGLE_API_KEY"]
+            st.dataframe(
+                df_cities.style.apply(highlight_player, axis=1),
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            st.error("❌ Game Over — Metroplex Status not reached.")
+            st.write(f"You finished with **{current_e} Econ** and **{current_l} Living**.")
+            st.write("You needed 95 Econ and 90 Living. Better luck next time!")
+    else:
+        st.info(f"🎮 Game ends after 6 laps. You're on lap {st.session_state.pass_go_count}.")
+        st.markdown("**Win Condition:** Reach 95 Econ / 90 Living by lap 6.")
