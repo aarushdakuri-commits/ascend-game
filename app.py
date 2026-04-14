@@ -144,3 +144,5 @@ with col2:
         )
 
     st.divider()
+
+API_KEY = st.secrets["GOOGLE_API_KEY"]
